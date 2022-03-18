@@ -19,13 +19,13 @@ class Camera:
 		self.align = None
 
 		# Camera calibration properties
-		self.mtx = numpy.load('./data/intrinsics.npy')
-		self.dist = numpy.load('./data/distortion.npy')
+		self.mtx = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/intrinsics.npy')
+		self.dist = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/distortion.npy')
 
 		# Chessboard properties
 		self.h = 14
 		self.b = 9
-		self.size = 17.6  # aantal mm zijde van een vierkant op het schaakbord
+		self.size = 17.4
 
 	def start(self):
 
@@ -34,6 +34,7 @@ class Camera:
 
 		# Config
 		self.conf = realsense.config()
+		self.conf.enable_device('821312060313')
 		self.conf.enable_stream(realsense.stream.depth, self.depth_resolution[0], self.depth_resolution[1], realsense.format.z16, self.frames_per_second)
 		self.conf.enable_stream(realsense.stream.color, self.color_resolution[0], self.color_resolution[1], realsense.format.bgr8, self.frames_per_second)
 		
@@ -75,7 +76,7 @@ class Camera:
 		# objectpunten van het schaakbord voorbereiden
 		objp = numpy.zeros((self.b * self.h, 3), numpy.float32)
 		objp[:, :2] = numpy.mgrid[0:self.b, 0:self.h].T.reshape(-1, 2)
-		objp = 17.6 * objp
+		objp = self.size * objp
 
 		# Convert to grayscale
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

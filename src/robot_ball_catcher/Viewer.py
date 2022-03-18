@@ -19,47 +19,48 @@ class Viewer:
         imgpts = imgpts.astype(int)
 
         # Line projections
-        img = cv2.line(img, tuple(imgpts[3].ravel()), tuple(imgpts[0].ravel()), (0, 0, 255), 5)
-        img = cv2.line(img, tuple(imgpts[3].ravel()), tuple(imgpts[1].ravel()), (0, 255, 0), 5)
-        img = cv2.line(img, tuple(imgpts[3].ravel()), tuple(imgpts[2].ravel()), (255, 0, 0), 5)
-        text_pos = (imgpts[0].ravel() + np.array([3.5, -7])).astype(int)
-        cv2.putText(img, 'X', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[1].ravel()), (0, 0, 255), 5)
+        img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[2].ravel()), (0, 255, 0), 5)
+        img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[3].ravel()), (255, 0, 0), 5)
         text_pos = (imgpts[1].ravel() + np.array([3.5, -7])).astype(int)
-        cv2.putText(img, 'Y', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        cv2.putText(img, 'X', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255))
         text_pos = (imgpts[2].ravel() + np.array([3.5, -7])).astype(int)
-        cv2.putText(img, 'Z', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255))
+        cv2.putText(img, 'Y', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255))
         text_pos = (imgpts[3].ravel() + np.array([3.5, -7])).astype(int)
+        cv2.putText(img, 'Z', tuple(text_pos), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255))
 
         return img
 
     # Draw box
-    def draw_box(self, img, mtx, dist, rvecs, tvecs, length):
+    def draw_cube(self, img, mtx, dist, rvecs, tvecs, x, y, z, size):
 
         # Frame axis
-        box = np.float32([[0.08, 0.06, 0], [0.12, 0.06, 0], [0.12, 0.10, 0], [0.08, 0.10, 0], [0.08, 0.06, -0.04],
-                          [0.12, 0.06, -0.04], [0.12, 0.10, -0.04], [0.08, 0.10, -0.04]]).reshape(-1, 3)
+        box = np.float32([[x, y, z], [x+size, y, z], [x+size, y+size, z], [x, y+size, z],
+                          [x, y, z-size], [x+size, y, z-size], [x+size, y+size, z-size], [x, y+size, z-size]]).reshape(-1, 3)
         
         # Project 3D points in 2D
         imgpts, _ = cv2.projectPoints(box, rvecs, tvecs, mtx, dist)
+        imgpts = imgpts.astype(int)
         
         # Line projections
-        corner = tuple(imgpts[0].ravel())
-        img = cv2.line(img, corner, tuple(imgpts[1].ravel()), (0, 255, 0), 5)
-        img = cv2.line(img, corner, tuple(imgpts[2].ravel()), (0, 0, 255), 5)
-        img = cv2.line(img, corner, tuple(imgpts[3].ravel()), (255, 0, 0), 5)
+        img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[1].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[1].ravel()), tuple(imgpts[2].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[2].ravel()), tuple(imgpts[3].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[3].ravel()), tuple(imgpts[0].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[4].ravel()), tuple(imgpts[5].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[5].ravel()), tuple(imgpts[6].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[6].ravel()), tuple(imgpts[7].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[7].ravel()), tuple(imgpts[4].ravel()), (0, 0, 255), 3)
+        img = cv2.line(img, tuple(imgpts[0].ravel()), tuple(imgpts[4].ravel()), (0, 255, 255), 3)
+        img = cv2.line(img, tuple(imgpts[1].ravel()), tuple(imgpts[5].ravel()), (0, 255, 255), 3)
+        img = cv2.line(img, tuple(imgpts[2].ravel()), tuple(imgpts[6].ravel()), (0, 255, 255), 3)
+        img = cv2.line(img, tuple(imgpts[3].ravel()), tuple(imgpts[7].ravel()), (0, 255, 255), 3)
 
         return img
 
     # Set window
     def set_window(self, windowname, width, height):
-
-        self.window_height = 1080
-        self.window_width = 1920
-
-        # Set name
         cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
-
-        # Set size
         cv2.resizeWindow(windowname, width, height)
 
     # Show image
@@ -81,19 +82,18 @@ class Viewer:
 
         # Too close to detect depth
         if depth == 0:
-            depth_as_string = 'TO CLOSE'
+            depth_as_string = 'Not able to detect'
         else:
             depth_as_string = str(depth)
 
         # Project pixel and depth values
-        cv2.putText(image, "pixel: " + center_as_string, (10, 300), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(image, "depth in mm: " + depth_as_string, (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(image, "depth in mm: " + depth_as_string, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
         # Project 3D cooridnates
         if depth:
             if x or y or z:
-                cv2.putText(image, "X: " + str(int(round(x))) + ' mm', (10, 500), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-                cv2.putText(image, "Y: " + str(int(round(y))) + ' mm', (10, 600), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-                cv2.putText(image, "Z: " + str(int(round(z))) + ' mm', (10, 700), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(image, "X: " + str(int(round(x))) + ' mm', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(image, "Y: " + str(int(round(y))) + ' mm', (10, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(image, "Z: " + str(int(round(z))) + ' mm', (10, 190), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
         return image

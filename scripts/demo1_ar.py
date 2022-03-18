@@ -35,17 +35,17 @@ def plot_coordinates(d, x, y, z):
     ax3.cla()
 
     # Set canvas data
-    ax1.set_title('X')
-    ax1.set_xlabel('time (ms)')
-    ax1.set_ylabel('coordinate (mm)')
+    ax1.set_title('X-coordinate (mm)')
+    ax1.set_xlabel('Time (ms)')
+    ax1.set_ylabel('X-coordinate (mm)')
     ax1.set_ylim(-300, 300)
-    ax2.set_title('Y')
-    ax2.set_xlabel('time (ms)')
-    ax2.set_ylabel('coordinate (mm)')
+    ax2.set_title('Y-coordinate (mm)')
+    ax2.set_xlabel('Time (ms)')
+    ax2.set_ylabel('Y-coordinate (mm)')
     ax2.set_ylim(-300, 300)
-    ax3.set_title('Z')
-    ax3.set_xlabel('time (ms)')
-    ax3.set_ylabel('coordinate (mm)')
+    ax3.set_title('Z-coordinate (mm)')
+    ax3.set_xlabel('Time (ms)')
+    ax3.set_ylabel('Z-coordinate (mm)')
     ax3.set_ylim(-300, 300)
 
     # Plot axis
@@ -65,17 +65,18 @@ def update(i):
     # Gaussian blur
     blurred_image = cv2.GaussianBlur(color_image, (7, 7), 0)
 
+    # Canny edge detection
+    canny_image = cv2.Canny(blurred_image, 50, 200)
+    canny_image = cv2.bitwise_and(color_image, color_image, mask=canny_image)
+
     # Mask ball
     mask_image = get_mask(color_image, lower_color, upper_color)
 
     # Apply mask to image
     res = cv2.bitwise_and(color_image, color_image, mask=mask_image)
 
-    # Binary of image
-    mask_bgr = cv2.bitwise_and(white_image, white_image, mask=mask_image)
-
     # Get pixel coordinate of ball center
-    ball_pixel, radius = get_ball_pixel(mask_image, minradius)
+    ball_pixel, radius = get_ball_pixel(mask_image, 30)
 
     # Contour detection
     contours = cv2.findContours(mask_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -84,7 +85,8 @@ def update(i):
 
     # Compute the bounding box of the contour
     if not len(contours) == 0:
-        box = cv2.minAreaRect(contours[0])
+        c = max(contours, key = cv2.contourArea)
+        box = cv2.minAreaRect(c)
         box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
         box_image = cv2.drawContours(color_image.copy(), [box.astype("int")], -1, (0, 255, 0), 2)
         center = np.mean(box, axis=0).astype(int)
@@ -99,8 +101,8 @@ def update(i):
     final_img_2 = color_image.copy()
     if ret:
         final_img_2 = cv2.drawChessboardCorners(final_img_2, (cam.b, cam.h), corners, ret)
-        final_img_2 = viewer.draw_axes(final_img_2, cam.mtx, cam.dist, rvecs, tvecs, 36.3)
-        final_img_2 = viewer.draw_cube(final_img_2, cam.mtx, cam.dist, rvecs, tvecs, 36.3, 96.8, 0, 36.3)
+        final_img_2 = viewer.draw_axes(final_img_2, cam.mtx, cam.dist, rvecs, tvecs, 52.2)
+        final_img_2 = viewer.draw_cube(final_img_2, cam.mtx, cam.dist, rvecs, tvecs, 52.2, 139.2, 0, 52.2)
 
     # If ball found
     if ball_pixel and ret:
@@ -122,7 +124,7 @@ def update(i):
 
     # Create image 1
     row1 = numpy.hstack((color_image, blurred_image, res))
-    row2 = numpy.hstack((mask_bgr, contours_image, box_image))
+    row2 = numpy.hstack((canny_image, contours_image, box_image))
     final_img_1 = numpy.vstack((row1, row2))
 
     # Show images
@@ -130,12 +132,6 @@ def update(i):
     viewer.show_image(final_img_2, 'Augmented reality')
 
 if __name__ == '__main__':
-
-    # Window settings
-    window_b, window_h = 1920, 1080
-
-    # minimum straal van de bal contour
-    minradius = 30
 
     # Get camera object
     cam = Camera()
@@ -154,18 +150,18 @@ if __name__ == '__main__':
     white_image[:] = [255, 255, 255]
 
     # Get HSV calibration params path
-    hsvfile = numpy.load('./data/hsv.npy')
+    hsvfile = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/hsv.npy')
 
     # Get HSV calibration params
     lower_color = numpy.array([hsvfile[0], hsvfile[2], hsvfile[4]])
     upper_color = numpy.array([hsvfile[1], hsvfile[3], hsvfile[5]])
 
     # Get camera calibration params
-    mtx = numpy.load('./data/intrinsics.npy')
-    dist = numpy.load('./data/distortion.npy')
-    ext = numpy.load('./data/extrinsics.npy')
-    rvecs = numpy.load('./data/extrinsic_rvecs.npy')
-    tvecs = numpy.load('./data/extrinsic_tvecs.npy')
+    mtx = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/intrinsics.npy')
+    dist = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/distortion.npy')
+    ext = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/extrinsics.npy')
+    rvecs = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/extrinsic_rvecs.npy')
+    tvecs = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/extrinsic_tvecs.npy')
 
     # Set canvas
     fig = plt.figure()

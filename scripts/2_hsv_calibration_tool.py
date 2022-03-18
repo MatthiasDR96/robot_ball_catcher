@@ -7,7 +7,7 @@ from robot_ball_catcher.Viewer import Viewer
 from robot_ball_catcher.image_processing import *
 
 # Read data from previous calibrations
-hsvfile = numpy.load('./data/hsv.npy')
+hsvfile = numpy.load('c:/Users/Admin/Documents/robot_ball_catcher/data/hsv.npy')
 
 # Window settings
 window_name = 'HSV calibration tool'
